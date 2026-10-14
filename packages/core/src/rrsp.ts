@@ -1,4 +1,4 @@
-import { RRSP_DOLLAR_LIMITS, RRSP_INCOME_RATE, RRSP_OVERCONTRIBUTION_BUFFER } from "./limits";
+import { RRSP_INCOME_RATE, RRSP_OVERCONTRIBUTION_BUFFER, rrspDollarLimit, type Limit } from "./limits";
 
 export interface RrspInput {
   year: number;
@@ -11,7 +11,7 @@ export interface RrspInput {
 }
 
 export interface RrspResult {
-  dollarLimit: number;
+  dollarLimit: Limit;
   incomeBasedRoom: number;
   newRoom: number;
   deductionLimit: number;
@@ -21,12 +21,8 @@ export interface RrspResult {
 }
 
 export function calculateRrsp(input: RrspInput): RrspResult {
-  const dollarLimit = RRSP_DOLLAR_LIMITS[input.year];
-  if (dollarLimit === undefined) {
-    throw new RangeError(`No RRSP dollar limit on file for ${input.year}`);
-  }
-
-  const incomeBasedRoom = Math.min(Math.round(input.lastYearEarnedIncome * RRSP_INCOME_RATE), dollarLimit);
+  const dollarLimit = rrspDollarLimit(input.year);
+  const incomeBasedRoom = Math.min(Math.round(input.lastYearEarnedIncome * RRSP_INCOME_RATE), dollarLimit.amount);
   const newRoom =
     incomeBasedRoom - input.pensionAdjustment - input.pastServicePensionAdjustment + input.pensionAdjustmentReversal;
   const deductionLimit = input.unusedRoomFromLastYear + newRoom;

@@ -1,9 +1,20 @@
-import { calculateRrsp, formatCad, parseAmount, RRSP_DOLLAR_LIMITS } from "@room/core";
+import {
+  calculateRrsp,
+  currentYear,
+  FIRST_RRSP_YEAR,
+  formatCad,
+  formatLimit,
+  LATEST_RRSP_YEAR,
+  parseAmount,
+  RRSP_PROJECTION_NOTE,
+  yearRange,
+} from "@room/core";
 import { useState } from "react";
 import { MoneyField, Result, Row, YearField } from "./fields";
 
-const years = Object.keys(RRSP_DOLLAR_LIMITS).map(Number);
-const defaultYear = years.includes(new Date().getFullYear()) ? new Date().getFullYear() : years[years.length - 1];
+const thisYear = currentYear();
+const years = yearRange(FIRST_RRSP_YEAR, Math.max(thisYear + 1, LATEST_RRSP_YEAR));
+const defaultYear = Math.max(thisYear, FIRST_RRSP_YEAR);
 
 export function RrspCalculator() {
   const [year, setYear] = useState(defaultYear);
@@ -57,8 +68,11 @@ export function RrspCalculator() {
           <Row label="Taxed at 1% per month" value={formatCad(r.penalizedExcess)} />
         </Result>
       ) : (
-        <Result headline={`RRSP room available for ${year}`} amount={formatCad(r.availableRoom)}>
-          <Row label={`${year} dollar limit`} value={formatCad(r.dollarLimit)} />
+        <Result headline={`RRSP room available for ${year}`}
+          amount={formatCad(r.availableRoom)}
+          note={r.dollarLimit.estimated ? RRSP_PROJECTION_NOTE : undefined}
+        >
+          <Row label={`${year} dollar limit`} value={formatLimit(r.dollarLimit)} />
           <Row label={`18% of ${year - 1} income (capped)`} value={formatCad(r.incomeBasedRoom)} />
           <Row label={`New room for ${year}`} value={formatCad(r.newRoom)} />
           <Row label={`${year} deduction limit`} value={formatCad(r.deductionLimit)} />

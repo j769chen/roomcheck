@@ -1,5 +1,53 @@
 import { describe, expect, it } from "vitest";
-import { calculateFhsa, calculateRrsp, calculateTfsa, parseAmount } from "./index";
+import {
+  calculateFhsa,
+  calculateRrsp,
+  calculateTfsa,
+  parseAmount,
+  RRSP_DOLLAR_LIMITS,
+  rrspDollarLimit,
+  TFSA_ANNUAL_LIMITS,
+  TFSA_INDEXATION_RATES,
+  tfsaLimit,
+} from "./index";
+
+describe("tfsaLimit", () => {
+  it("reproduces every published indexed limit from the indexation rates", () => {
+    let indexed = 5000;
+    for (const year of Object.keys(TFSA_INDEXATION_RATES).map(Number)) {
+      indexed *= 1 + TFSA_INDEXATION_RATES[year];
+      if (year !== 2015) expect(Math.round(indexed / 500) * 500).toBe(TFSA_ANNUAL_LIMITS[year]);
+    }
+  });
+
+  it("returns published limits as exact", () => {
+    expect(tfsaLimit(2026)).toEqual({ amount: 7000, estimated: false });
+  });
+
+  it("projects later years in $500 steps", () => {
+    const limit = tfsaLimit(2040);
+    expect(limit.estimated).toBe(true);
+    expect(limit.amount % 500).toBe(0);
+    expect(limit.amount).toBeGreaterThan(7000);
+  });
+});
+
+describe("rrspDollarLimit", () => {
+  it("returns published limits as exact", () => {
+    expect(rrspDollarLimit(2027)).toEqual({ amount: 35390, estimated: false });
+  });
+
+  it("projects later years from the latest published limit", () => {
+    const limit = rrspDollarLimit(2028);
+    expect(limit.estimated).toBe(true);
+    expect(limit.amount).toBeGreaterThan(RRSP_DOLLAR_LIMITS[2027]);
+    expect(limit.amount % 10).toBe(0);
+  });
+
+  it("rejects years before the table starts", () => {
+    expect(() => rrspDollarLimit(2000)).toThrow(RangeError);
+  });
+});
 
 describe("calculateTfsa", () => {
   const base = { year: 2026, totalContributions: 0, withdrawalsBeforeThisYear: 0, withdrawalsThisYear: 0 };
@@ -30,14 +78,20 @@ describe("calculateTfsa", () => {
       withdrawalsThisYear: 3000,
     });
     expect(r.availableRoom).toBe(14000);
-    expect(r.nextYearLimit).toBeNull();
-    expect(r.nextYearRoom).toBeNull();
+    expect(r.nextYearLimit.estimated).toBe(true);
+    expect(r.nextYearRoom).toBe(14000 + 3000 + r.nextYearLimit.amount);
   });
 
   it("projects next year's room when the next limit is known", () => {
     const r = calculateTfsa({ ...base, year: 2025, birthYear: 1980, totalContributions: 100000, withdrawalsThisYear: 3000 });
     expect(r.availableRoom).toBe(2000);
     expect(r.nextYearRoom).toBe(2000 + 3000 + 7000);
+  });
+
+  it("works for years past the published limits", () => {
+    const r = calculateTfsa({ ...base, year: 2035, birthYear: 1980 });
+    expect(r.usesEstimates).toBe(true);
+    expect(r.availableRoom).toBeGreaterThan(109000 + 9 * 7000);
   });
 
   it("reports over-contributions", () => {
@@ -72,6 +126,7 @@ describe("calculateRrsp", () => {
   it("caps new room at the annual dollar limit", () => {
     const r = calculateRrsp({ ...base, lastYearEarnedIncome: 250000 });
     expect(r.incomeBasedRoom).toBe(33810);
+    expect(r.dollarLimit.estimated).toBe(false);
   });
 
   it("applies pension adjustments and carried-forward room", () => {
@@ -93,8 +148,10 @@ describe("calculateRrsp", () => {
     expect(r.penalizedExcess).toBe(1500);
   });
 
-  it("rejects years without a published limit", () => {
-    expect(() => calculateRrsp({ ...base, year: 2030, lastYearEarnedIncome: 1 })).toThrow(RangeError);
+  it("caps at a projected limit for years past the published ones", () => {
+    const r = calculateRrsp({ ...base, year: 2035, lastYearEarnedIncome: 1_000_000 });
+    expect(r.dollarLimit.estimated).toBe(true);
+    expect(r.incomeBasedRoom).toBe(r.dollarLimit.amount);
   });
 });
 
@@ -138,6 +195,12 @@ describe("calculateFhsa", () => {
     expect(r.years.map((y) => y.participationRoom)).toEqual([8000, 8000, -4000, 4000]);
     expect(r.availableRoom).toBe(4000);
     expect(r.overContribution).toBe(0);
+  });
+
+  it("works for any later year", () => {
+    const r = calculateFhsa({ year: 2040, openedYear: 2030, contributionsByYear: { 2030: 8000, 2031: 8000 } });
+    expect(r.availableRoom).toBe(16000);
+    expect(r.lastParticipationYear).toBe(2044);
   });
 
   it("rejects accounts opened before 2023", () => {

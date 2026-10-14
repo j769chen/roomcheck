@@ -125,10 +125,11 @@ interface ResultProps {
   headline: string;
   amount: string;
   tone?: "ok" | "warn";
+  note?: string;
   children?: ReactNode;
 }
 
-export function Result({ headline, amount, tone = "ok", children }: ResultProps) {
+export function Result({ headline, amount, tone = "ok", note, children }: ResultProps) {
   const c = usePalette();
   const warn = tone === "warn";
   return (
@@ -136,6 +137,7 @@ export function Result({ headline, amount, tone = "ok", children }: ResultProps)
       <Text style={[styles.label, { color: c.muted }]}>{headline}</Text>
       <Text style={[styles.amount, { color: warn ? c.warn : c.accent }]}>{amount}</Text>
       {children}
+      {note && <Text style={[styles.note, { color: c.muted }]}>{note}</Text>}
     </View>
   );
 }
@@ -164,5 +166,6 @@ const styles = StyleSheet.create({
   amount: { fontSize: 40, fontWeight: "700", fontVariant: ["tabular-nums"], marginBottom: 8 },
   row: { flexDirection: "row", justifyContent: "space-between", gap: 16, paddingVertical: 8, borderTopWidth: 1 },
   rowLabel: { flex: 1, fontSize: 14 },
+  note: { fontSize: 12, marginTop: 8 },
   rowValue: { fontSize: 14, fontWeight: "600", fontVariant: ["tabular-nums"] },
 });

@@ -29,9 +29,15 @@ RRSP: unused room carried forward, plus 18% of last year's earned income up to t
 
 FHSA: $8,000 a year from the year you open the account, with up to $8,000 of unused room carried forward and a $40,000 lifetime cap. Over-contributions reduce the next year's room. Withdrawals don't restore room.
 
-## Updating limits
+## Future years
 
-CRA publishes new limits each November. Add them to `packages/core/src/limits.ts`; the year pickers pick them up automatically.
+The calculators work for any year. Published CRA limits live in `packages/core/src/limits.ts`. For later years, limits are projected the way CRA sets them and shown as estimates:
+
+- TFSA: $5,000 indexed to inflation (2% assumed), rounded to the nearest $500
+- RRSP: the latest published limit grown with average wages (3% assumed), rounded to the nearest $10
+- FHSA: fixed at $8,000 a year and $40,000 lifetime, so no projection is needed
+
+When CRA announces new limits each November, add them to the tables (and the TFSA indexation rate) to replace the estimates.
 
 Limits on file: TFSA through 2026, RRSP through 2027.
 
