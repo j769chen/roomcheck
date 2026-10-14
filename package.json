@@ -1,0 +1,15 @@
+{
+  "name": "roomcheck",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "test": "npm run test -w @room/core",
+    "typecheck": "npm run typecheck -w @room/core && npm run typecheck -w web && npm run typecheck -w mobile",
+    "lint": "npm run lint -w web",
+    "web": "npm run dev -w web",
+    "mobile": "npm run start -w mobile"
+  }
+}
