@@ -50,15 +50,17 @@ interface ResultProps {
   headline: string;
   amount: string;
   tone?: "ok" | "warn";
+  note?: string;
   children?: ReactNode;
 }
 
-export function Result({ headline, amount, tone = "ok", children }: ResultProps) {
+export function Result({ headline, amount, tone = "ok", note, children }: ResultProps) {
   return (
     <section className={`result ${tone}`} aria-live="polite">
       <span className="result-label">{headline}</span>
       <span className="result-amount">{amount}</span>
       {children && <dl className="breakdown">{children}</dl>}
+      {note && <p className="note">{note}</p>}
     </section>
   );
 }

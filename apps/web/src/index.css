@@ -209,6 +209,12 @@ select {
   font-variant-numeric: tabular-nums;
 }
 
+.note {
+  margin: 12px 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
 footer {
   margin-top: 40px;
   font-size: 0.82rem;

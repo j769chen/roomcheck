@@ -1,11 +1,12 @@
-import { calculateTfsa, formatCad, LATEST_TFSA_YEAR, parseAmount, TFSA_ANNUAL_LIMITS, TFSA_FIRST_YEAR, yearRange } from "@room/core";
+import { calculateTfsa, currentYear, formatCad, formatLimit, LATEST_TFSA_YEAR, parseAmount, TFSA_FIRST_YEAR, TFSA_PROJECTION_NOTE, yearRange } from "@room/core";
 import { useState } from "react";
 import { MoneyField, Result, Row, YearField } from "./fields";
 
-const currentYear = Math.min(new Date().getFullYear(), LATEST_TFSA_YEAR);
+const thisYear = currentYear();
+const lastYear = Math.max(thisYear, LATEST_TFSA_YEAR);
 
 export function TfsaCalculator() {
-  const [year, setYear] = useState(currentYear);
+  const [year, setYear] = useState(thisYear);
   const [birthYear, setBirthYear] = useState(1990);
   const [residentSince, setResidentSince] = useState(0);
   const [contributions, setContributions] = useState("");
@@ -24,13 +25,13 @@ export function TfsaCalculator() {
   return (
     <div className="calculator">
       <form className="inputs" onSubmit={(e) => e.preventDefault()}>
-        <YearField label="Tax year" value={year} years={yearRange(TFSA_FIRST_YEAR, LATEST_TFSA_YEAR)} onChange={setYear} />
-        <YearField label="Year you were born" value={birthYear} years={yearRange(1920, currentYear).reverse()} onChange={setBirthYear} />
+        <YearField label="Tax year" value={year} years={yearRange(TFSA_FIRST_YEAR, lastYear)} onChange={setYear} />
+        <YearField label="Year you were born" value={birthYear} years={yearRange(1920, thisYear).reverse()} onChange={setBirthYear} />
         <YearField
           label="Year you became a Canadian resident"
           hint="Leave as-is if you've lived in Canada since 2009 or since turning 18."
           value={residentSince}
-          years={yearRange(TFSA_FIRST_YEAR, currentYear)}
+          years={yearRange(TFSA_FIRST_YEAR, thisYear)}
           onChange={setResidentSince}
           allowEmpty="Always / before 2009"
         />
@@ -54,11 +55,13 @@ export function TfsaCalculator() {
           <Row label="Penalty" value="1% of the excess per month until removed" />
         </Result>
       ) : (
-        <Result headline={`TFSA room available in ${year}`} amount={formatCad(r.availableRoom)}>
+        <Result headline={`TFSA room available in ${year}`} amount={formatCad(r.availableRoom)}
+          note={r.usesEstimates || r.nextYearLimit.estimated ? TFSA_PROJECTION_NOTE : undefined}
+        >
           <Row label="Room accrued since" value={r.eligibleFromYear ? String(r.eligibleFromYear) : "Not eligible yet"} />
           <Row label="Total annual limits" value={formatCad(r.accruedLimits)} />
-          <Row label={`${year} annual limit`} value={formatCad(TFSA_ANNUAL_LIMITS[year])} />
-          {r.nextYearRoom !== null && <Row label={`Projected room on Jan 1, ${year + 1}`} value={formatCad(Math.max(0, r.nextYearRoom))} />}
+          <Row label={`${year} annual limit`} value={formatLimit(r.yearLimit)} />
+          <Row label={`Projected room on Jan 1, ${year + 1}`} value={formatCad(r.nextYearRoom) + (r.nextYearLimit.estimated ? " (est.)" : "")} />
         </Result>
       )}
     </div>

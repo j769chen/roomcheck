@@ -1,11 +1,11 @@
-import { calculateFhsa, FHSA_FIRST_YEAR, FHSA_LIFETIME_LIMIT, formatCad, parseAmount, yearRange } from "@room/core";
+import { calculateFhsa, currentYear, FHSA_FIRST_YEAR, FHSA_LIFETIME_LIMIT, formatCad, parseAmount, yearRange } from "@room/core";
 import { useState } from "react";
 import { MoneyField, Result, Row, YearField } from "./fields";
 
-const currentYear = Math.max(new Date().getFullYear(), FHSA_FIRST_YEAR);
+const lastYear = Math.max(currentYear(), FHSA_FIRST_YEAR);
 
 export function FhsaCalculator() {
-  const [year, setYear] = useState(currentYear);
+  const [year, setYear] = useState(lastYear);
   const [openedYear, setOpenedYear] = useState(FHSA_FIRST_YEAR);
   const [contributions, setContributions] = useState<Record<number, string>>({});
 
@@ -17,7 +17,7 @@ export function FhsaCalculator() {
   return (
     <div className="calculator">
       <form className="inputs" onSubmit={(e) => e.preventDefault()}>
-        <YearField label="Tax year" value={year} years={yearRange(FHSA_FIRST_YEAR, currentYear)} onChange={setYear} />
+        <YearField label="Tax year" value={year} years={yearRange(FHSA_FIRST_YEAR, lastYear)} onChange={setYear} />
         <YearField
           label="Year you opened your first FHSA"
           hint="Room only starts building once an account is open."
